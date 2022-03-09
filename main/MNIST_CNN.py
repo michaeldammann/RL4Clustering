@@ -11,11 +11,12 @@ class MINST_CNN(nn.Module):
         self.conv_part.extend(self.conv_relu_bn_pool_stack(1, 4, 3))
         self.conv_part.extend(self.conv_relu_bn_pool_stack(4, 8, 3))
         self.conv_part.extend(self.conv_relu_bn_pool_stack(8, 16, 3))
-
+        #self.flatten = nn.Flatten()
         self.fc_part = nn.ModuleList([])
         self.fc_part.extend(self.lin_relu_bn_stack(9*16, 120))
         self.fc_part.extend(self.lin_relu_bn_stack(120, config.FEATURE_DIM))
         self.logits = nn.Linear(config.FEATURE_DIM, 10)
+
 
     def conv_relu_bn_pool_stack(self, input_dims, output_dims, filter_size):
         return nn.ModuleList([nn.Conv2d(input_dims, output_dims, filter_size, padding='same'),
