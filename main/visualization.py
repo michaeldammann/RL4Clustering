@@ -45,6 +45,7 @@ def load_representation_model(modelfolder, epoch):
 
 def prepare_representations(modelfolder, epoch, dataloader, percentage_representations=0.1):
     all_representations = []
+    all_classes = []
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
     dataloader_iter = iter(dataloader)
@@ -52,7 +53,7 @@ def prepare_representations(modelfolder, epoch, dataloader, percentage_represent
     rep_model = load_representation_model(modelfolder, epoch)
     rep_model.to(device)
 
-    sample_interval = int(100/percentage_representations)
+    sample_interval = int(1/percentage_representations)
 
     for i in range(len(dataloader)):
         obs, classes = next(dataloader_iter)
@@ -61,22 +62,53 @@ def prepare_representations(modelfolder, epoch, dataloader, percentage_represent
         representations = rep_model(obs)
         representations_np = representations.cpu().detach().numpy()
 
+        classes_np = classes.cpu().detach().numpy()
+
         for idx, rep in enumerate(representations_np):
             if idx%sample_interval==0:
                 all_representations.append(rep)
+                all_classes.append(classes_np[idx])
 
-    return np.array(all_representations)
+    return np.array(all_representations), np.array(all_classes)
 
 def umap_representations(modelfolder, epoch, dataloader, percentage_representations=0.1):
     #prepare data
-    rep_data = prepare_representations(modelfolder, epoch, dataloader, percentage_representations)
+    rep_data, classes = prepare_representations(modelfolder, epoch, dataloader, percentage_representations)
     reducer = umap.UMAP(random_state=42)
     print('Starting UMAP Fitting')
     embedding = reducer.fit_transform(rep_data)
+    return embedding, classes
+
+def visualize(x, y, classes):
+    data = pd.DataFrame({"X Value": x, "Y Value": y, "Category": classes})
+    groups = data.groupby("Category")
+    for name, group in groups:
+        plt.plot(group["X Value"], group["Y Value"], marker="o", linestyle="", label=name)
+    plt.legend()
+
+    plt.show()
+
+def umap_viz(modelfolder, epoch, dataloader, percentage_representations=0.1):
+    embedding, classes = umap_representations(modelfolder, epoch, dataloader, percentage_representations)
+    visualize(embedding[:,0], embedding[:,1], classes)
+
+def twodimfeatures_viz(modelfolder, epoch, dataloader, percentage_representations=0.1):
+    reps, classes = prepare_representations(modelfolder, epoch, dataloader)
+    print(reps.shape)
+    visualize(reps[:,0], reps[:, 1], classes)
+
+
+
 
 modelfolder = 'result_batch_size_1024_feature_dim_16_reward_classes_1_learningrate_0.001'
+modelfolder2d = 'result_batch_size_1024_feature_dim_2_reward_classes_1_learningrate_0.001'
 mnist_dataloader = init_dataloader_mnist()
-umap_representations(modelfolder, 15, mnist_dataloader)
+
+
+#umap_viz(modelfolder,24, mnist_dataloader, 0.03)
+for i in range(15,25):
+    twodimfeatures_viz(modelfolder2d, i , mnist_dataloader, 0.03)
+
 
 
 #score over time
