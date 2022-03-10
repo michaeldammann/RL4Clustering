@@ -13,6 +13,7 @@ from torch.utils.data import DataLoader
 from torchvision.transforms import ToTensor
 import numpy as np
 
+
 def score_over_epochs(modelfolder):
     score_history_path = Path('..', modelfolder, 'data.json')
     with open(score_history_path) as d:
@@ -99,15 +100,15 @@ def twodimfeatures_viz(modelfolder, epoch, dataloader, percentage_representation
 
 
 
-
 modelfolder = 'result_batch_size_1024_feature_dim_16_reward_classes_1_learningrate_0.001'
-modelfolder2d = 'result_batch_size_1024_feature_dim_2_reward_classes_1_learningrate_0.001'
+modelfolder2d = 'result_batch_size_4096_feature_dim_2_reward_classes_1_learningrate_0.01_rew_nn'
 mnist_dataloader = init_dataloader_mnist()
 
 
 #umap_viz(modelfolder,24, mnist_dataloader, 0.03)
-for i in range(15,25):
-    twodimfeatures_viz(modelfolder2d, i , mnist_dataloader, 0.03)
+
+for elem in range(50,60):
+    twodimfeatures_viz(modelfolder2d, elem, mnist_dataloader, 0.02)
 
 
 

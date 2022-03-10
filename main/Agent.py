@@ -18,6 +18,7 @@ import numpy as np
 import gym
 from gym.spaces import Discrete, Box
 from sklearn.metrics import silhouette_samples, silhouette_score
+from sklearn.neighbors import NearestNeighbors
 
 
 class Agent:
@@ -43,10 +44,30 @@ class Agent:
         logp = self.get_policy(batch_obs).log_prob(batch_actions)
         return -(logp * batch_weights).mean()
 
+    def kld(self, vector):
+        '''
+        z_log_var =
+        z_mean =
+        kl_loss = 1 + z_log_var - np.square(z_mean) - np.exp(z_log_var)
+        kl_loss = np.sum(kl_loss, axis=-1)
+        kl_loss *= -0.5
+        kl_loss = K.mean(kl_loss)
+        '''
+        return -0.5*np.sum(np.square(np.mean(vector, axis=0))+np.var(vector, axis=0)-np.log2(np.var(vector))-1)
+
+    def reward_nn(self, reps):
+        distances=[]
+        nbrs = NearestNeighbors(n_neighbors=2, algorithm='ball_tree').fit(reps)
+        _, indices = nbrs.kneighbors(reps)
+        for idx, elem in enumerate(indices):
+            distances.append(np.absolute(reps[elem[0]]-reps[elem[1]]))
+        return np.sum(np.array(distances))
+
+
     def rewards_maxclasses(self, representations_np, batch_actions_np, n_classes, r_classes):
         rewards_np = silhouette_samples(representations_np, batch_actions_np)
         n_clusters = len(np.unique(batch_actions_np))
-        return rewards_np - r_classes * (n_classes - n_clusters)
+        return rewards_np - r_classes * (n_classes - n_clusters) + 10*self.reward_nn(representations_np)
 
     def train(self):
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
