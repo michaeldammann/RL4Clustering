@@ -46,7 +46,6 @@ class Agent:
     def rewards_maxclasses(self, representations_np, batch_actions_np, n_classes, r_classes):
         rewards_np = silhouette_samples(representations_np, batch_actions_np)
         n_clusters = len(np.unique(batch_actions_np))
-        print(n_clusters)
         return rewards_np - r_classes * (n_classes - n_clusters)
 
     def train(self):
@@ -57,6 +56,7 @@ class Agent:
         Path('..', config.SAVE_DIR).mkdir(parents=True, exist_ok=True)
         score_history = []
         for epoch in range(config.EPOCHS):
+            print('Epoch {}'.format(epoch))
             dataloader = DataLoader(dataset=self.dataset, batch_size=config.BATCH_SIZE, shuffle=True)
             dataloader_iter = iter(dataloader)
             for i in range(len(dataloader) - 1):  # -1 to only use "full" batches
@@ -79,8 +79,8 @@ class Agent:
                 rewards = torch.from_numpy(rewards_np).to(device)
 
                 score = silhouette_score(representations_np, batch_actions_np)
-                print(score)
-                score_history.append(str(score))
+                #print(score)
+
 
                 optimizer = Adam(self.neural_net.parameters(), lr=config.LR)
                 optimizer.zero_grad()
@@ -89,6 +89,8 @@ class Agent:
                 optimizer.step()
 
             if epoch % config.SAVE_INTERVALL == 0:
+                print(score)
+                score_history.append(str(score))
                 torch.save(self.neural_net.state_dict(),
                            Path('..', config.SAVE_DIR, 'model_epoch_{}'.format(str(epoch))))
 
